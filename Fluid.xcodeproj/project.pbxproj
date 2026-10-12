@@ -1048,7 +1048,7 @@
 				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 27;
+				CURRENT_PROJECT_VERSION = 28;
 				DEVELOPMENT_TEAM = V4J43B279J;
 				ENABLE_APP_SANDBOX = NO;
 				ENABLE_CODE_COVERAGE = NO;
@@ -1076,7 +1076,7 @@
 					"@executable_path/../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 15.0;
-				MARKETING_VERSION = "1.6.10-beta.8";
+				MARKETING_VERSION = "1.6.11";
 				PRODUCT_BUNDLE_IDENTIFIER = com.FluidApp.app.debug;
 				PRODUCT_NAME = "FluidVoice Debug";
 				PROVISIONING_PROFILE_SPECIFIER = "";
@@ -1103,7 +1103,7 @@
 				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 27;
+				CURRENT_PROJECT_VERSION = 28;
 				DEVELOPMENT_TEAM = V4J43B279J;
 				ENABLE_APP_SANDBOX = NO;
 				ENABLE_CODE_COVERAGE = NO;
@@ -1131,7 +1131,7 @@
 					"@executable_path/../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 15.0;
-				MARKETING_VERSION = "1.6.10-beta.8";
+				MARKETING_VERSION = "1.6.11";
 				PRODUCT_BUNDLE_IDENTIFIER = com.FluidApp.app;
 				PRODUCT_NAME = FluidVoice;
 				PROVISIONING_PROFILE_SPECIFIER = "";
