@@ -13,6 +13,40 @@ final class MeetingSummaryInputTests: XCTestCase {
         XCTAssertNil(original.postProcessing)
     }
 
+    /// A meeting is saved with whole-second dates. The summary text must not depend on the fractions
+    /// the app still holds right after recording, or a summary made then is hidden after a restart.
+    func testSummaryMadeRightAfterRecordingStillMatchesOnceTheMeetingIsReloaded() async throws {
+        var live = self.session(origin: 0, segmentStart: 0, segmentEnd: 1, gapStart: 2, gapEnd: 3)
+        live.startedAt = Date(timeIntervalSince1970: 1_700_000_000.7)
+        live.endedAt = Date(timeIntervalSince1970: 1_700_001_800.3) // 29 min 59.6 s as recorded
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent("MeetingSummaryInputTests-\(UUID().uuidString)", isDirectory: true)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let store = MeetingSessionStore(rootDirectory: root)
+        try await store.create(live)
+        let loaded = try await store.load(id: live.id)
+        let reloaded = try XCTUnwrap(loaded)
+        XCTAssertNotEqual(reloaded.endedAt, live.endedAt, "The store keeps whole seconds; that is the difference under test")
+
+        XCTAssertEqual(MeetingSummaryInput.transcript(for: live), MeetingSummaryInput.transcript(for: reloaded))
+        XCTAssertEqual(
+            MeetingSummaryInput.fingerprint(MeetingSummaryInput.transcript(for: live)),
+            MeetingSummaryInput.fingerprint(MeetingSummaryInput.transcript(for: reloaded))
+        )
+    }
+
+    func testDurationLineIsUnchangedForMeetingsAlreadyOnWholeSeconds() {
+        var session = self.session(origin: 0, segmentStart: 0, segmentEnd: 1, gapStart: 2, gapEnd: 3)
+        session.startedAt = Date(timeIntervalSince1970: 1_700_000_000)
+        for (seconds, minutes) in [(0.0, 0), (59, 0), (60, 1), (1799, 29), (1800, 30), (2640, 44)] {
+            session.endedAt = session.startedAt.addingTimeInterval(seconds)
+            XCTAssertTrue(MeetingSummaryInput.transcript(for: session).contains("Duration: \(minutes) minutes\n"), "\(seconds) s")
+        }
+        session.endedAt = nil
+        XCTAssertTrue(MeetingSummaryInput.transcript(for: session).contains("Duration: 0 minutes\n"))
+        session.endedAt = session.startedAt.addingTimeInterval(-30)
+        XCTAssertTrue(MeetingSummaryInput.transcript(for: session).contains("Duration: 0 minutes\n"), "A clock that went backwards still reads zero")
+    }
+
     func testChangedTextOrSpeakerInvalidatesSavedSummary() {
         var session = self.session(origin: 0, segmentStart: 0, segmentEnd: 1, gapStart: 2, gapEnd: 3)
         let original = MeetingSummaryInput.fingerprint(MeetingSummaryInput.transcript(for: session))
@@ -191,6 +225,22 @@ final class MeetingSummaryActivityTests: XCTestCase {
         gate.unlockSelection(nextLock)
         XCTAssertNotNil(gate.beginProcessing())
         XCTAssertNoThrow(try activity.acquireExclusiveActivity(.dictation))
+    }
+
+    func testRemoteSummaryLeavesDictationAndProcessingAvailable() async throws {
+        let gate = MeetingSummaryActivityCoordinator()
+        let activity = Activity()
+        try await gate.withRemoteSummary {
+            let processing = try XCTUnwrap(gate.beginProcessing(), "Dictation must be able to finish during a cloud summary")
+            gate.endProcessing(processing)
+            XCTAssertNoThrow(try activity.acquireExclusiveActivity(.dictation))
+            do {
+                try await gate.withRemoteSummary { XCTFail("Must not overlap") }
+                XCTFail("Second summary must fail")
+            } catch { XCTAssertTrue(error is MeetingModelResidencyError) }
+        }
+        XCTAssertEqual(activity.handoffs, 0)
+        try await gate.withRemoteSummary {}
     }
 
     func testFailureDrainsHandbackBeforeReleasingAdmission() async {
