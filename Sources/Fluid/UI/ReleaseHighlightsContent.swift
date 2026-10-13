@@ -18,33 +18,35 @@ struct ReleaseHighlightsContent {
     let release: String
     let title: String
     let subtitle: String
+    let officialSiteNotice: String
     let features: [Feature]
 
     static func current(hasPrivateAI: Bool) -> Self {
         Self(
             release: "1.6.12",
-            title: "A smoother start.",
-            subtitle: "More reliable startup and model downloads.",
+            title: "Meeting summaries and agent integrations",
+            subtitle: "Summarize meetings on your Mac or with your AI provider. Connect your coding agents from FluidMeet settings.",
+            officialSiteNotice: "**Help people find the real FluidVoice.** A site impersonating FluidVoice is appearing above us in search results, making it harder for people to find us. "
+                + "Our official websites are [fluidvoice.com](https://fluidvoice.com) and [altic.dev/fluid](https://altic.dev/fluid). "
+                + "If FluidVoice has helped you, please visit [fluidvoice.com](https://fluidvoice.com) and explore. Bookmark and share it to help others find the real app. Thank you for supporting us.",
             features: [
                 Feature(
-                    id: "startup",
-                    preview: .dashboard,
-                    eyebrow: "READY WHEN YOU ARE",
-                    title: "Quieter login launches",
-                    detail: "Keep the window hidden at login, then reopen it from the menu bar without a duplicate.",
-                    action: "Open dashboard",
-                    destination: .dashboard
+                    id: "summaries",
+                    preview: .meeting,
+                    eyebrow: "YOUR MEETINGS, SUMMARIZED",
+                    title: "Meeting summaries are back",
+                    detail: "Summarize on your Mac or with your own AI provider. Add a custom prompt and keep your summaries after restarting.",
+                    action: "Open FluidMeet",
+                    destination: .meetings
                 ),
                 Feature(
-                    id: "models",
-                    preview: .models,
-                    eyebrow: hasPrivateAI ? "ON YOUR MAC. FOR YOU." : "YOUR AI, YOUR WAY",
-                    title: hasPrivateAI ? "More reliable downloads" : "Find your AI",
-                    detail: hasPrivateAI
-                        ? "Model downloads retry brief interruptions and resume saved progress. Working models stay available during a failed update."
-                        : "Choose your AI provider and make every dictation sound more like you.",
-                    action: hasPrivateAI ? "Explore the models" : "Explore AI providers",
-                    destination: .aiProviders
+                    id: "integrations",
+                    preview: .meeting,
+                    eyebrow: "MEET YOUR CODING AGENTS",
+                    title: "Connect your coding agents",
+                    detail: "Let Claude Code, Codex and other coding agents read your meetings. Set them up in FluidMeet settings → Integrations.",
+                    action: "Open FluidMeet",
+                    destination: .meetings
                 ),
             ]
         )
