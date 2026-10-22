@@ -1256,7 +1256,7 @@ struct ContentView: View {
         self.pendingModifierOnly = false
     }
 
-    private func shortcutConflictMessage(for shortcut: HotkeyShortcut, target: ShortcutRecordingTarget) -> String? {
+    func shortcutConflictMessage(for shortcut: HotkeyShortcut, target: ShortcutRecordingTarget) -> String? {
         if target == .meeting, !shortcut.isMeetingRecordingShortcut {
             return "Use a keyboard key with a modifier for meeting recording"
         }
@@ -1287,11 +1287,15 @@ struct ContentView: View {
         if self.isPromptModeShortcutEnabled {
             configuredShortcuts.append((.secondaryDictation, self.promptModeHotkeyShortcut))
         }
+        if self.isCommandModeShortcutEnabled, let shortcut = self.commandModeHotkeyShortcut {
+            configuredShortcuts.append((.command, shortcut))
+        }
+        if self.isPasteLastTranscriptionShortcutEnabled, let shortcut = self.pasteLastTranscriptionHotkeyShortcut {
+            configuredShortcuts.append((.pasteLast, shortcut))
+        }
         let optionalConfiguredShortcuts: [(ShortcutRecordingTarget, HotkeyShortcut?)] = [
             (.meeting, SettingsStore.shared.meetingRecordingHotkeyShortcut),
             (.cancel, self.cancelRecordingHotkeyShortcut),
-            (.command, self.commandModeHotkeyShortcut),
-            (.pasteLast, self.pasteLastTranscriptionHotkeyShortcut),
         ]
 
         for (otherTarget, configuredShortcut) in configuredShortcuts where otherTarget != target {
@@ -4758,22 +4762,23 @@ struct ContentView: View {
 
     private func prewarmPrivateAIDictationIfNeeded(for slot: SettingsStore.DictationShortcutSlot) {
         let appBundleID = self.asr.isRunningOrStarting ? self.recordingAppInfo?.bundleId : DictationAppSession.shared.appID
-        let settings = SettingsStore.shared
-        let route = DictationProviderRoute.resolve(
-            settings: settings,
-            dictationSlot: slot,
-            appBundleID: appBundleID
-        )
-        guard route.usesPrivateAI,
-              DictationAIPostProcessingGate.isConfigured(for: slot, appBundleID: appBundleID)
-        else { return }
-
-        // Cancel any prior prewarm so rapid start/stop doesn't queue duplicate
-        // actor work on PrivateAIIntegrationService.
         self.prewarmDictationTask?.cancel()
+        self.prewarmDictationTask = nil
+        guard let verification = DictationProviderRoute.privateAIWarmupVerification(
+            settings: .shared,
+            slot: slot,
+            appBundleID: appBundleID
+        ) else { return }
+
         let warmupGeneration = MeetingModelResidencyCoordinator.shared.warmupGeneration
         self.prewarmDictationTask = Task {
+            defer {
+                if !Task.isCancelled { self.prewarmDictationTask = nil }
+            }
             guard !Task.isCancelled, MeetingModelResidencyCoordinator.shared.canRunWarmup(warmupGeneration) else { return }
+            let modelID = await Task.detached(priority: .utility) { verification.verifiedModelID() }.value
+            guard modelID != nil, !Task.isCancelled,
+                  MeetingModelResidencyCoordinator.shared.canRunWarmup(warmupGeneration) else { return }
             DebugLogger.shared.debug(
                 "ContentView: AI dictation prewarm started slot=\(slot.rawValue)",
                 source: "ContentView"
@@ -4783,9 +4788,6 @@ struct ContentView: View {
                 "AI dictation prewarm complete slot=\(slot.rawValue)",
                 source: "ContentView"
             )
-            if !Task.isCancelled {
-                self.prewarmDictationTask = nil
-            }
         }
     }
 
