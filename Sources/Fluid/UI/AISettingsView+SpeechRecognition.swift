@@ -203,6 +203,7 @@ extension VoiceEngineSettingsView {
                             .font(self.theme.typography.bodySmall)
                             .foregroundStyle(self.voiceEngineSecondaryText)
                             .lineLimit(2)
+                            .help(model.supportedLanguageNames ?? supportedLanguageCodes)
                     }
 
                     // Memory warning for large models
@@ -831,8 +832,8 @@ extension VoiceEngineSettingsView {
     private func speechModelBackgroundColor(for model: SettingsStore.SpeechModel) -> Color {
         let brand = model.brandName.lowercased()
 
-        // Both NVIDIA and OpenAI use white/light gray bg (transparent logos)
-        if brand.contains("nvidia") || brand.contains("openai") || brand.contains("whisper") {
+        // Keep these provider marks on a light background in both appearances.
+        if brand.contains("nvidia") || brand.contains("openai") || brand.contains("whisper") || brand.contains("qwen") {
             return Color(red: 0.97, green: 0.97, blue: 0.97)
         }
         if brand.contains("apple") || model.usesAppleLogo {
@@ -849,6 +850,10 @@ extension VoiceEngineSettingsView {
         }
         if brand.contains("cohere") {
             return "Provider_Cohere"
+        }
+        if brand.contains("qwen") {
+            // Official organization mark from https://github.com/QwenLM.
+            return "Provider_Qwen"
         }
         if brand.contains("openai") || brand.contains("whisper") {
             return "Provider_OpenAI"
