@@ -539,7 +539,7 @@ final class FluidAudioProvider: TranscriptionProvider {
                 if installedHash == nil {
                     let release = descriptor
                     let validator: ParakeetArchiveDownloader.StageValidator?
-                    if release.variant == .mini || release.variant == .pico {
+                    if release.isHostedPack {
                         validator = { directory in
                             progressRelay.report(.loading)
                             try await CompactSpeechModelRuntimeCheck.validateStagedWeights(at: directory, descriptor: release)
@@ -1842,7 +1842,7 @@ final class FluidAudioProvider: TranscriptionProvider {
     func modelsExistOnDisk() -> Bool {
         let selectedModel = self.resolvedSpeechModel
         switch selectedModel {
-        case .fluidParakeetMini, .fluidParakeetPico:
+        case .fluidParakeetMini, .fluidParakeetPico, .fluidParakeetPro:
             return SpeechModelInstallationSnapshot.shared.isInstalled(modelID: selectedModel.id)
         case .parakeetTDT, .parakeetTDTv2:
             return selectedModel.isInstalled
@@ -1866,7 +1866,7 @@ final class FluidAudioProvider: TranscriptionProvider {
     }
 
     var preservesInstalledCompactWeights: Bool {
-        self.resolvedSpeechModel == .fluidParakeetMini || self.resolvedSpeechModel == .fluidParakeetPico
+        [.fluidParakeetMini, .fluidParakeetPico, .fluidParakeetPro].contains(self.resolvedSpeechModel)
     }
 
     var shouldClearCacheAfterCancellation: Bool {
