@@ -1642,7 +1642,7 @@ final class SettingsStore: ObservableObject {
             self.selectedModel = nil
         }
 
-        if retiredProviderIDs.contains(self.commandModeSelectedProviderID) {
+        if self.commandModeSelectedProviderID == "apple-intelligence-disabled" {
             self.commandModeSelectedProviderID = ""
             self.commandModeSelectedModel = nil
         }
